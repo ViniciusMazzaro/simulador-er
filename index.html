@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulador de Expressões Regulares</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap">
+  <link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+
+  <header class="topo">
+    <div class="conteiner topo-linha">
+      <div>
+        <h1>Simulador de Expressões Regulares</h1>
+        <p class="subtitulo">Linguagens Formais e Teoria da Computação · UNESP Presidente Prudente</p>
+      </div>
+      <nav class="abas">
+        <button type="button" class="aba ativa" data-modo="formal">Notação formal</button>
+        <button type="button" class="aba" data-modo="regexp">REGEXP</button>
+      </nav>
+    </div>
+  </header>
+
+  <section id="topo-formal" class="editor">
+    <div class="conteiner">
+      <div class="linha">
+        <label for="campo-er" class="rotulo">Expressão regular</label>
+        <label class="rotulo menu">
+          Exemplos das aulas
+          <select id="exemplos"></select>
+        </label>
+      </div>
+      <input id="campo-er" class="campo-expressao" spellcheck="false" autocomplete="off">
+      <div class="linha">
+        <div id="teclas" class="teclas"></div>
+        <div class="alfabeto">
+          <label for="campo-alfabeto">Σ =</label>
+          <input id="campo-alfabeto" placeholder="automático" spellcheck="false">
+          <span id="alfabeto-final"></span>
+        </div>
+      </div>
+      <p id="erro-er" class="aviso-erro" hidden><span id="erro-er-texto"></span></p>
+      <div id="info-er" class="info">
+        <span>Agrupamento implícito <code id="agrupamento"></code></span>
+        <span>AFND-ε <span id="tamanho-afnd"></span></span>
+      </div>
+    </div>
+  </section>
+
+  <section id="topo-regexp" class="editor" hidden>
+    <div class="conteiner">
+      <div class="linha">
+        <label for="campo-regexp" class="rotulo">Expressão REGEXP</label>
+        <label class="rotulo menu">
+          Exemplos
+          <select id="exemplos-regexp"></select>
+        </label>
+      </div>
+      <div id="caixa-regexp" class="caixa-regexp">
+        <span class="barra">/</span>
+        <input id="campo-regexp" spellcheck="false" autocomplete="off">
+        <span class="barra">/</span>
+        <div class="flags">
+          <label class="flag" title="Encontrar todas as ocorrências"><input type="checkbox" id="flag-g" checked>g</label>
+          <label class="flag" title="Ignorar maiúsculas e minúsculas"><input type="checkbox" id="flag-i">i</label>
+        </div>
+      </div>
+      <p id="erro-regexp" class="aviso-erro" hidden><span id="erro-regexp-texto"></span></p>
+      <p class="info">Cada linha do texto é testada separadamente. Use <code>^</code> no início e <code>$</code> no fim para exigir que a linha inteira case.</p>
+    </div>
+  </section>
+
+  <main class="conteiner principal">
+
+    <div id="area-formal" class="area">
+      <div class="grade">
+        <section class="bloco">
+          <label for="cadeias" class="titulo">Cadeias de teste</label>
+          <textarea id="cadeias" spellcheck="false"></textarea>
+          <p class="nota">Uma cadeia por linha. Escreva ε para a cadeia vazia.</p>
+        </section>
+        <section class="bloco">
+          <div class="cabecalho">
+            <h2 class="titulo">Resultado</h2>
+            <p class="contadores"><span id="total-aceitas" class="ok"></span> · <span id="total-rejeitadas" class="erro"></span></p>
+          </div>
+          <div id="lista-resultados" class="lista"></div>
+        </section>
+      </div>
+
+      <section class="bloco">
+        <div class="cabecalho">
+          <h2 class="titulo">Reconhecimento de <code id="cadeia-atual">—</code></h2>
+          <div class="controles">
+            <button type="button" id="passo-inicio" title="Primeiro passo">|‹</button>
+            <button type="button" id="passo-anterior" title="Passo anterior">‹</button>
+            <span id="contador-passos" class="contador-passos"></span>
+            <button type="button" id="passo-seguinte" title="Próximo passo">›</button>
+            <button type="button" id="passo-fim" title="Último passo">›|</button>
+          </div>
+        </div>
+        <div class="fita-rolagem"><div id="fita" class="fita"></div></div>
+        <div class="estados">
+          <span class="rotulo">Estados ativos</span>
+          <div id="estados-ativos" class="fichas"></div>
+          <span id="veredito" class="veredito"></span>
+        </div>
+        <div class="diagrama-rolagem"><div id="diagrama"></div></div>
+        <p class="nota">AFND-ε gerado pela construção de Thompson. Os estados destacados são os ativos no passo atual; o estado com círculo duplo é o final.</p>
+        <details class="detalhes">
+          <summary>Passo a passo</summary>
+          <div class="tabela">
+            <table>
+              <thead><tr><th>Passo</th><th>Lido</th><th>Restante</th><th>Estados ativos (fecho-ε)</th></tr></thead>
+              <tbody id="passos"></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <div class="grade">
+        <section class="bloco">
+          <div class="cabecalho">
+            <h2 class="titulo">Cadeias de L(ER)</h2>
+            <label class="nota" for="tamanho-maximo">até <select id="tamanho-maximo"></select> símbolos</label>
+          </div>
+          <div id="linguagem" class="linguagem"></div>
+          <p id="nota-linguagem" class="nota"></p>
+        </section>
+        <section class="bloco">
+          <div class="cabecalho">
+            <h2 class="titulo">Tabela de transição δ</h2>
+            <span class="nota">→ inicial · * final</span>
+          </div>
+          <div class="tabela tabela-alta"><table id="tabela-transicao"></table></div>
+        </section>
+      </div>
+
+      <p class="sintaxe">União <b>|</b> ou <b>+</b> · concatenação por justaposição ou <b>.</b> · fechamento <b>*</b> · cadeia vazia <b>ε</b> · linguagem vazia <b>∅</b> · precedência: <b>*</b> &gt; concatenação &gt; <b>|</b></p>
+    </div>
+
+    <div id="area-regexp" class="area" hidden>
+      <div class="grade">
+        <section class="bloco">
+          <label for="textos-regexp" class="titulo">Texto de teste</label>
+          <textarea id="textos-regexp" spellcheck="false"></textarea>
+          <p class="nota">Cada linha é testada separadamente.</p>
+        </section>
+        <section class="bloco">
+          <div class="cabecalho">
+            <h2 class="titulo">Resultado</h2>
+            <span id="resumo-regexp" class="nota"></span>
+          </div>
+          <div id="lista-regexp" class="lista"></div>
+        </section>
+      </div>
+
+      <div class="grade">
+        <section class="bloco">
+          <div class="cabecalho">
+            <h2 class="titulo">Correspondências</h2>
+            <span id="total-correspondencias" class="nota"></span>
+          </div>
+          <div class="tabela tabela-alta">
+            <table>
+              <thead><tr><th>#</th><th>Linha</th><th>Posição</th><th>Trecho</th><th>Grupos</th></tr></thead>
+              <tbody id="correspondencias"></tbody>
+            </table>
+          </div>
+        </section>
+        <aside class="bloco">
+          <h2 class="titulo">Referência rápida</h2>
+          <dl class="referencia">
+            <dt>^ $</dt><dd>início e fim da linha</dd>
+            <dt>.</dt><dd>qualquer caractere</dd>
+            <dt>a|b</dt><dd>a ou b</dd>
+            <dt>[abc]</dt><dd>um dos caracteres</dd>
+            <dt>[a-z]</dt><dd>intervalo de caracteres</dd>
+            <dt>[^abc]</dt><dd>qualquer um, exceto esses</dd>
+            <dt>\d \w \s</dt><dd>dígito, letra/dígito/_, espaço</dd>
+            <dt>a*</dt><dd>zero ou mais</dd>
+            <dt>a+</dt><dd>um ou mais</dd>
+            <dt>a?</dt><dd>zero ou um</dd>
+            <dt>a{2,4}</dt><dd>de 2 a 4 vezes</dd>
+            <dt>(…)</dt><dd>grupo de captura</dd>
+          </dl>
+        </aside>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="rodape">
+    <div class="conteiner">
+      Vinícius Mazzaro e Matheus Trindade · LFTC 2026
+    </div>
+  </footer>
+
+  <script src="js/motor.js"></script>
+  <script src="js/exemplos.js"></script>
+  <script src="js/interface.js"></script>
+</body>
+</html>
